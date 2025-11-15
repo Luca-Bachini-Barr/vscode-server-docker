@@ -1,0 +1,10 @@
+.vscode/
+.DS_Store
+*.env
+*.pem
+*.key
+*.crt
+*.log
+node_modules/
+build/
+dist/
