@@ -29,6 +29,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase repo owner
+        id: owner
+        run: echo "::set-output name=owner::$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
@@ -37,5 +41,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/vscode-server:latest
-            ghcr.io/${{ toLower(github.repository_owner) }}/vscode-server:${{ github.sha }}
+            ghcr.io/${{ steps.owner.outputs.owner }}/vscode-server:latest
+            ghcr.io/${{ steps.owner.outputs.owner }}/vscode-server:${{ github.sha }}
