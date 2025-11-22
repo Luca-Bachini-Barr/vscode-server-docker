@@ -1,0 +1,23 @@
+services:
+  vscode-server:
+    hostname: vscode-server
+    container_name: vscode-server
+    build:
+      context: ./vscode-server
+      dockerfile: Dockerfile
+    image: local/vscode-server:dev
+    ports:
+      - "8585:8585"
+    environment:
+      - PORT=8585
+      - PUID=1039
+      - PGID=100
+    volumes:
+      - /home/john/docker/appdata/vscode-server/config:/config
+      - /home/john/docker/appdata/vscode-server/data:/home/vscodeuser
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/john/docker-compose:/docker-compose
+    network_mode: my_bridge
+    restart: unless-stopped
+
+
