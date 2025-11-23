@@ -1,18 +1,44 @@
 services:
+  # VS Code Server service
   vscode-server:
+    # Hostname used inside the Docker network (optional)
     hostname: vscode-server
+    # Container name (optional) - useful for direct  commands
     container_name: vscode-server
+
+    # Image to use for the service. By default this uses the prebuilt
+    # image published to GHCR. To build locally instead, remove or
+    # comment out  and uncomment the  block below.
     image: ghcr.io/luca-bachini-barr/vscode-server:latest
-    ports:
-      - "8585:8585"
+
+    # Build from local Dockerfile (uncomment to enable local build)
+    # build:
+    #   context: ./vscode-server
+    #   dockerfile: Dockerfile
+
+    # Port mappings: intentionally left out so the compose file is
+    # generic. To bind a host port to the container, add a 
+    # section with the format "HOST:CONTAINER". Example:
+    #
+    # ports:
+    #   - "8585:8585"
+
+    # Environment variables available inside the container. You can
+    # customize these values;  is the container's listening
+    # port (not the host port).
     environment:
       - PORT=8585
       - PUID=1039
       - PGID=100
+
+    # Volumes: map host paths into the container. Update host paths as
+    # necessary for your environment.
     volumes:
       - /home/john/docker/appdata/vscode-server/config:/config
       - /home/john/docker/appdata/vscode-server/data:/home/vscodeuser
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/john/docker-compose:/docker-compose
+
+    # Networking and restart policy
     network_mode: my_bridge
     restart: unless-stopped
