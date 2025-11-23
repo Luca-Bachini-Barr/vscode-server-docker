@@ -11,13 +11,16 @@ services:
     # comment out  and uncomment the  block below.
     image: ghcr.io/luca-bachini-barr/vscode-server:latest
 
+    ports:
+      - 8585:8585
+
     # Environment variables available inside the container. You can
     # customize these values;  is the container's listening
     # port (not the host port).
     environment:
       - PORT=8585
-      - PUID=1039
-      - PGID=100
+      - PUID=1000 # change to required
+      - PGID=1000 # change to required
 
     # Volumes: map host paths into the container. Update host paths as
     # necessary for your environment.
