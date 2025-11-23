@@ -2,10 +2,7 @@ services:
   vscode-server:
     hostname: vscode-server
     container_name: vscode-server
-    build:
-      context: ./vscode-server
-      dockerfile: Dockerfile
-    image: local/vscode-server:dev
+    image: ghcr.io/luca-bachini-barr/vscode-server:latest
     ports:
       - "8585:8585"
     environment:
@@ -19,5 +16,3 @@ services:
       - /home/john/docker-compose:/docker-compose
     network_mode: my_bridge
     restart: unless-stopped
-
-
