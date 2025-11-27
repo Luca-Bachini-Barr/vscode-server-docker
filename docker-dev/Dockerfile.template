@@ -1,0 +1,60 @@
+FROM debian:bookworm-slim
+ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG INSTALL_EXTENSIONS=""
+ENV HOME=/home/vscodeuser
+
+# Install common dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https wget curl gnupg2 sudo nano git unzip ca-certificates procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install VS Code based on architecture (match nerasse's approach)
+RUN ARCH=$(dpkg --print-architecture) && \
+    echo "Detected architecture: $ARCH (TARGETARCH=$TARGETARCH)" && \
+    if [ "$TARGETARCH" = "amd64" ] || [ "$ARCH" = "amd64" ]; then \
+        echo "Installing VS Code for amd64..." && \
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg && \
+        install -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/trusted.gpg.d/ && \
+        echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list && \
+        rm /tmp/packages.microsoft.gpg && \
+        apt-get update && apt-get install -y code && rm -rf /var/lib/apt/lists/* && \
+        which code || (echo "ERROR: code command not found after installation!" && exit 1); \
+    elif [ "$TARGETARCH" = "arm64" ] || [ "$ARCH" = "arm64" ]; then \
+        echo "Installing VS Code for arm64..." && \
+        wget -qO /tmp/vscode-arm64.deb https://update.code.visualstudio.com/latest/linux-deb-arm64/stable && \
+        apt-get update && apt-get install -y /tmp/vscode-arm64.deb && \
+        rm /tmp/vscode-arm64.deb && rm -rf /var/lib/apt/lists/* && \
+        which code || (echo "ERROR: code command not found after installation!" && exit 1); \
+    else \
+        echo "WARNING: VS Code is not available for architecture: $TARGETARCH$TARGETVARIANT ($ARCH) - container will be built without VS Code"; \
+    fi
+
+# Install optional extras: docker CLI from distribution (you can change to docker-ce repo if preferred)
+RUN apt-get update && apt-get install -y --no-install-recommends docker.io || true && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user (default UID/GID 1000)
+RUN groupadd -g 1000 vscodeuser || true \
+ && useradd -m -u 1000 -g 1000 -s /bin/bash vscodeuser \
+ && echo 'vscodeuser ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/vscodeuser && chmod 0440 /etc/sudoers.d/vscodeuser
+
+# Allow build-time installation of extensions into /opt/preinstalled-extensions
+RUN mkdir -p /opt/preinstalled-extensions && chown -R vscodeuser:vscodeuser /opt/preinstalled-extensions
+
+# If INSTALL_EXTENSIONS ARG provided, install them at build time
+RUN if [ -n "$INSTALL_EXTENSIONS" ] && [ "$INSTALL_EXTENSIONS" != "" ]; then \
+      echo "Installing extensions: $INSTALL_EXTENSIONS" && \
+      su - vscodeuser -c "code --extensions-dir /opt/preinstalled-extensions --install-extension $(echo $INSTALL_EXTENSIONS | tr ',' ' ')" || true; \
+    fi
+
+# Copy entrypoint (runtime logic) and make executable
+COPY entrypoint.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Expose the default port for VS Code serve-web
+EXPOSE 8585
+VOLUME ["/home/vscodeuser"]
+
+ENTRYPOINT ["/app/start.sh"]
+CMD ["/usr/bin/code"]
