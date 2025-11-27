@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  vscode-dev:
+    build:
+      context: ./docker-dev
+      dockerfile: Dockerfile.template
+    image: luca/vscode-server-dev:local
+    container_name: vscode-dev
+    environment:
+      - PUID=1000
+      - PGID=100
+      - EXTENSIONS=bracketpaircolordlw.bracket-pair-color-dlw,github.copilot,github.copilot-chat,github.vscode-github-actions,ms-azuretools.vscode-containers,ms-azuretools.vscode-docker,oderwat.indent-rainbow
+    ports:
+      - "18585:8585"
+    volumes:
+      - ./docker-dev/data:/home/vscodeuser/.vscode-server
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker-dev/preinstalled-extensions:/opt/preinstalled-extensions:ro
+    restart: unless-stopped
